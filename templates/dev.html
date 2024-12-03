@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube 자막 처리</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result, #searchResult, #indexInfo {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .video-id {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .remove-btn {
+            background-color: #ff4444;
+            padding: 5px 10px;
+        }
+        .vector-item {
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .vector-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .text-content {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .metadata {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .button-group {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .youtube-link {
+            color: #ff0000;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .youtube-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube 자막 처리 시스템</h1>
+        
+        <!-- 비디오 처리 섹션 -->
+        <div class="section">
+            <h2>비디오 처리</h2>
+            <div class="input-group">
+                <label for="videoId">YouTube 비디오 ID:</label>
+                <div class="video-id">
+                    <input type="text" id="videoId" placeholder="예: dQw4w9WgXcQ">
+                    <button onclick="addVideoId()">추가</button>
+                </div>
+            </div>
+
+            <!-- JSON 파일 업로드 기능 추가 -->
+            <div class="input-group">
+                <label for="jsonFile">JSON 파일 업로드:</label>
+                <input type="file" id="jsonFile" accept=".json">
+                <button onclick="processJsonFile()">JSON 처리</button>
+            </div>
+
+            <div id="videoList">
+                <!-- 추가된 비디오 ID들이 여기에 표시됩니다 -->
+            </div>
+
+            <button onclick="processVideos()">처리 시작</button>
+            <div id="result">
+                처리 결과가 여기에 표시됩니다.
+            </div>
+        </div>
+
+        <!-- 검색 섹션 -->
+        <div class="section">
+            <h2>자막 검색</h2>
+            <div class="input-group">
+                <label for="searchQuery">검색어:</label>
+                <div class="video-id">
+                    <input type="text" id="searchQuery" placeholder="검색어를 입력하세요">
+                    <button onclick="searchSubtitles()">검색</button>
+                </div>
+            </div>
+            <div id="searchResult">
+                검색 결과가 여기에 표시됩니다.
+            </div>
+        </div>
+
+        <!-- 벡터 데이터 조회 섹션 -->
+        <div class="section">
+            <h2>벡터 데이터 조회</h2>
+            <div class="button-group">
+                <button onclick="getAllVectors()">전체 데이터 조회</button>
+                <button onclick="downloadVectorsAsJSON()">JSON 다운로드</button>
+            </div>
+            <div id="vectorsInfo">
+                벡터 데이터가 여기에 표시됩니다.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let videoIds = [];
+        let vectorsData = null;
+
+        function addVideoId() {
+            const videoId = document.getElementById('videoId').value.trim();
+            if (videoId && !videoIds.includes(videoId)) {
+                videoIds.push(videoId);
+                updateVideoList();
+                document.getElementById('videoId').value = '';
+            }
+        }
+
+        function removeVideoId(id) {
+            videoIds = videoIds.filter(v => v !== id);
+            updateVideoList();
+        }
+
+        function updateVideoList() {
+            const list = document.getElementById('videoList');
+            list.innerHTML = videoIds.map(id => `
+                <div class="video-id">
+                    <input type="text" value="${id}" readonly>
+                    <button class="remove-btn" onclick="removeVideoId('${id}')">제거</button>
+                </div>
+            `).join('');
+        }
+
+        function processVideos() {
+            if (videoIds.length === 0) {
+                alert('처리할 비디오 ID를 추가해주세요.');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '처리 중...';
+
+            fetch('/process_videos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ video_ids: videoIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.innerHTML = '<h3>처리 결과:</h3>' + 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '에러 발생: ' + error.message;
+            });
+        }
+
+        function searchSubtitles() {
+            const query = document.getElementById('searchQuery').value.trim();
+            if (!query) {
+                alert('검색어를 입력해주세요.');
+                return;
+            }
+
+            const searchResultDiv = document.getElementById('searchResult');
+            searchResultDiv.innerHTML = '검색 중...';
+
+            fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query, k: 5 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    searchResultDiv.innerHTML = `<div class="error">에러: ${data.error}</div>`;
+                    return;
+                }
+
+                let resultsHtml = '<h3>검색 결과:</h3>';
+                
+                if (data.results && Array.isArray(data.results.vectors)) {
+                    data.results.vectors.forEach(vector => {
+                        resultsHtml += `
+                            <div class="vector-item" onclick="window.open('${vector.youtube_url}', '_blank')">
+                                <div class="metadata">인덱스: ${vector.index}</div>
+                                <div class="metadata">유사도: ${vector.distance.toFixed(4)}</div>
+                                <div class="metadata">비디오 ID: ${vector.video_id}</div>
+                                <div class="metadata">제목: ${vector.title || '제목 없음'}</div>
+                                <div class="text-content">${vector.text}</div>
+                                <div class="metadata">저장 시간: ${vector.timestamp}</div>
+                                <a href="${vector.youtube_url}" class="youtube-link" target="_blank">
+                                    YouTube에서 보기
+                                </a>
+                            </div>
+                        `;
+                    });
+                } else {
+                    resultsHtml += '<p>검색 결과가 없습니다.</p>';
+                }
+
+                searchResultDiv.innerHTML = resultsHtml;
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                searchResultDiv.innerHTML = '검색 중 오류 발생: ' + error.message;
+            });
+        }
+
+        function getAllVectors() {
+            const infoDiv = document.getElementById('vectorsInfo');
+            infoDiv.innerHTML = '데이터 조회 중...';
+
+            fetch('/get_all_vectors')
+                .then(response => response.json())
+                .then(data => {
+                    vectorsData = data;
+                    
+                    if (data.error) {
+                        infoDiv.innerHTML = `<div class="error">에러: ${data.error}</div>`;
+                        return;
+                    }
+
+                    let vectorsHtml = `<h3>총 벡터 수: ${data.total_count}</h3>`;
+                    
+                    data.vectors.forEach((vector) => {
+                        vectorsHtml += `
+                            <div class="vector-item" onclick="window.open('https://www.youtube.com/watch?v=${vector.video_id}', '_blank')">
+                                <div class="metadata">인덱스: ${vector.index}</div>
+                                <div class="metadata">비디오 ID: ${vector.video_id}</div>
+                                <div class="metadata">제목: ${vector.title || '제목 없음'}</div>
+                                <div class="metadata">저장 시간: ${vector.timestamp}</div>
+                                <div class="metadata">거리: ${vector.distance.toFixed(4)}</div>
+                                <div class="text-content">${vector.text}</div>
+                                <a href="https://www.youtube.com/watch?v=${vector.video_id}" class="youtube-link" target="_blank">
+                                    YouTube에서 보기
+                                </a>
+                            </div>
+                        `;
+                    });
+
+                    infoDiv.innerHTML = vectorsHtml;
+                })
+                .catch(error => {
+                    infoDiv.innerHTML = '데이터 조회 중 오류 발생: ' + error.message;
+                });
+        }
+
+        function downloadVectorsAsJSON() {
+            if (!vectorsData) {
+                alert('먼저 데이터를 조회해주세요.');
+                return;
+            }
+
+            const dataStr = JSON.stringify(vectorsData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'faiss_vectors.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function processJsonFile() {
+            const fileInput = document.getElementById('jsonFile');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        if (Array.isArray(jsonData.video_ids)) {
+                            videoIds = [...new Set([...videoIds, ...jsonData.video_ids])];
+                            updateVideoList();
+                            alert(`${jsonData.video_ids.length}개의 비디오 ID가 추가되었습니다.`);
+                        } else {
+                            alert('올바른 JSON 형식이 아닙니다. {"video_ids": ["id1", "id2", ...]} 형식이어야 합니다.');
+                        }
+                    } catch (error) {
+                        alert('JSON 파일 처리 중 오류가 발생했습니다: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                alert('파일을 선택해주세요.');
+            }
+        }
+
+        // Enter 키로 검색 실행
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSubtitles();
+            }
+        });
+    </script>
+</body>
+</html>

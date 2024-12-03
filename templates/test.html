@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>채용 상담 AI - 개발 테스트</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .chat-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .content-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .input-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        #chatMessages {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 60px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: #e9ecef;
+            align-self: flex-end;
+        }
+        
+        .ai-message {
+            background-color: #f8f9fa;
+            align-self: flex-start;
+        }
+        
+        .related-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            transition: transform 0.2s;
+            cursor: pointer;
+            background-color: white;
+        }
+        
+        .related-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+        }
+        
+        .related-item-content {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .thumbnail {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .video-info {
+            flex: 1;
+        }
+        
+        .video-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .relevance {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        #userInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .send-button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .send-button:hover {
+            background-color: #0056b3;
+        }
+        
+        .send-button i {
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .loading {
+            display: none;
+            color: #666;
+            font-style: italic;
+            position: sticky;
+            top: 60px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            z-index: 90;
+            text-align: center;
+        }
+
+        /* 모바일 반응형 스타일 수정 */
+        @media (max-width: 600px) {
+            body, .container {
+                padding: 10px;
+                max-width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+            }
+
+            h2 {
+                font-size: 1.2rem;
+                margin-bottom: 15px;
+            }
+            
+            .chat-section, .content-section {
+                padding: 15px;
+                height: auto;
+                min-height: 300px;
+                margin-bottom: 15px;
+            }
+            
+            .input-container {
+                position: sticky;
+                bottom: 0;
+                background: white;
+                padding: 10px;
+                margin: 0;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+            
+            #userInput {
+                height: 40px;
+                font-size: 16px; /* iOS에서 자동 확대 방지 */
+            }
+            
+            button {
+                height: 40px;
+                min-width: 60px;
+                font-size: 14px;
+            }
+            
+            .message {
+                max-width: 90%;
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            
+            .related-item {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .related-item-content {
+                flex-direction: row; /* 가로 배치 유지 */
+                gap: 10px;
+            }
+            
+            .thumbnail {
+                width: 80px;
+                height: 60px;
+                min-width: 80px;
+            }
+            
+            .video-title {
+                font-size: 14px;
+                line-height: 1.3;
+            }
+            
+            .relevance {
+                font-size: 12px;
+            }
+            
+            .chat-section {
+                height: calc(100vh - 200px);
+                margin-bottom: 10px;
+            }
+            
+            .input-container {
+                padding: 10px;
+            }
+            
+            #chatMessages {
+                padding-bottom: 70px;
+            }
+        }
+
+        /* 작은 모바일 화면용 추가 스타일 */
+        @media (max-width: 380px) {
+            .related-item-content {
+                flex-direction: column;
+            }
+            
+            .thumbnail {
+                width: 100%;
+                height: auto;
+            }
+            
+            .video-info {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>채용 상담 AI 테스트</h1>
+        
+        <div class="chat-section">
+            <h2>취업 상담 채팅</h2>
+            <div id="loading" class="loading">AI가 응답을 생성중입니다...</div>
+            
+            <div class="input-container">
+                <input type="text" id="userInput" placeholder="안녕하세요! 취업 상담을 도와드리겠습니다.">
+                <button onclick="sendMessage()" class="send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            
+            <div id="chatMessages"></div>
+        </div>
+        
+        <div class="content-section">
+            <h2>관련 컨텐츠</h2>
+            <div id="relatedContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let userType = null;
+        let isFirstInteraction = true;
+        
+        window.onload = function() {
+            appendMessage("안녕하세요! 취업 상담을 도와드리기 전에 먼저 여쭤보고 싶습니다. 경력단절여성, 노인구직자, 청년구직자 중 어디에 해당하시나요?");
+        }
+        
+        function appendMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function appendRelatedData(relatedData) {
+            const contentDiv = document.getElementById('relatedContent');
+            contentDiv.innerHTML = '';
+            
+            console.log('Received related data:', relatedData); // 디버깅용
+            
+            relatedData.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'related-item';
+                
+                const videoId = item.video_id;
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                const videoTitle = item.video_title || '제목이 없음';
+                const relevanceScore = (item.relevance * 100).toFixed(2);
+                
+                itemDiv.innerHTML = `
+                    <div class="related-item-content">
+                        <img src="${thumbnailUrl}" alt="비디오 썸네일" class="thumbnail">
+                        <div class="video-info">
+                            <div class="video-title">${videoTitle}</div>
+                            <div class="relevance">관련도: ${relevanceScore}%</div>
+                        </div>
+                    </div>
+                `;
+                
+                console.log('Processing video:', {
+                    id: videoId,
+                    title: videoTitle,
+                    relevance: relevanceScore,
+                    thumbnailUrl: thumbnailUrl
+                });
+                
+                itemDiv.onclick = () => {
+                    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+                };
+                
+                contentDiv.appendChild(itemDiv);
+            });
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            appendMessage(message, true);
+            input.value = '';
+            
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        isFirstInteraction: isFirstInteraction,
+                        userType: userType
+                    })
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let currentResponse = '';
+                
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.content) {
+                                currentResponse += data.content;
+                                const lastMessage = document.querySelector('.ai-message:last-child');
+                                if (lastMessage) {
+                                    lastMessage.textContent = currentResponse;
+                                } else {
+                                    appendMessage(currentResponse);
+                                }
+                            }
+                            if (data.userType) {
+                                userType = data.userType;
+                                isFirstInteraction = false;
+                            }
+                            if (data.related_data) {
+                                appendRelatedData(data.related_data);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Enter 키로 메시지 전송
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        function handleChatResponse(data) {
+            if (data.related_videos) {
+                const videosContainer = document.getElementById('related-videos');
+                videosContainer.innerHTML = '<h3>관련 영상</h3>';
+                
+                data.related_videos.forEach((video, index) => {
+                    const videoElement = document.createElement('div');
+                    videoElement.className = 'video-item';
+                    videoElement.innerHTML = `
+                        <div class="video-info">
+                            <h4>${index + 1}. ${video.title}</h4>
+                            <p class="similarity">유사도: ${(video.similarity * 100).toFixed(1)}%</p>
+                            <p class="preview">${video.content}...</p>
+                            <p class="timestamp">타임스탬프: ${video.timestamp}</p>
+                            <a href="${video.url}" target="_blank" class="video-link">
+                                영상 보기 <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    `;
+                    videosContainer.appendChild(videoElement);
+                });
+            }
+            // ... 기존 채�� 응답 처리 코드 ...
+        }
+    </script>
+</body>
+</html>
