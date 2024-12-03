@@ -42,3 +42,15 @@ Flask를 활용하여 챗봇 서비스 프레임워크를 개발했습니다. �
 - Solar Mini Chat과 RAG를 활용한 신뢰성 높은 응답 제공.
 - YouTube 자막과 벡터 검색을 활용한 포괄적인 취업 정보 제공.
 - 한국어 텍스트 처리에 최적화된 높은 정확도.
+
+---
+
+## 첨부사진 및 자료
+
+[해커톤잡어라운드.pdf](https://github.com/user-attachments/files/17998038/default.pdf)
+![image](https://github.com/user-attachments/assets/aace060f-2d01-4a55-a464-8dc54578dd79)
+![image](https://github.com/user-attachments/assets/fcee809a-fa37-4852-8e00-ce9de155a739)
+
+![image](https://github.com/user-attachments/assets/b04ca002-f95c-4d79-9e09-a23f95467b99)
+
+
