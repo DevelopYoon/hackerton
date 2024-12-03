@@ -18,8 +18,8 @@ import glob
 app = Flask(__name__)
 
 # Configuration
-API_KEY = "AIzaSyBMGQl7Stz_4J6KlKYUxRC4k4uWV9D6bg8"#youtube api key
-SOLAR_API_KEY = "up_afAhvEc3GHRWQSvnZGxJjeS3Flj83"#solar api key
+API_KEY = #youtube api key
+SOLAR_API_KEY = #solar api key
 SOLAR_BASE_URL = "https://api.upstage.ai/v1/solar"
 current_dir = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(current_dir, "data", "faiss_index.index")
